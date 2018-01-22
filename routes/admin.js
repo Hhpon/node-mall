@@ -13,105 +13,104 @@ var uuidv4 = require('uuid/v4');
 fs = require('fs'),
 TITLE = '上传测试',
 AVATAR_UPLOAD_FOLDER = '/public/images/',
-// domain = "http://120.78.185.163:3000";
-domain = "http://127.0.0.1:3000";
+domain = "http://120.78.185.163:3000";
 //admin登录接口
 router.post('/login',function(req,res,next){
-	var param={
-			userName:req.body.userName,
-			userPwd:req.body.userPwd
-		}
-	Admin.findOne(param,function(err,doc){
+  var param={
+      userName:req.body.userName,
+      userPwd:req.body.userPwd
+    }
+  Admin.findOne(param,function(err,doc){
  console.log(doc)
-		if(err){
-			res.json({
-				status:'1',
-				msg:err.message
-			})
-		}else{
-			if(doc){
-				//cookie存储
-				res.cookie("adminId",doc.userId,{
-					path:'/',//存储的路劲
-					maxAge:1000*60*60//存储一个小时
-				})
-				res.cookie("adminName",doc.userName,{
-					path:'/',//存储的路劲
-					maxAge:1000*60*60//存储一个小时
-				})
-				res.json({
-					status:'0',
-					msg:"",
-					result:{
-						adminName:doc.userName
-					}
-				})
-			}else{
-				res.json({
-					status:'1',
-					msg:"输入不正确",
-					result:''
-				})
-			}
-		}
-	})
+    if(err){
+      res.json({
+        status:'1',
+        msg:err.message
+      })
+    }else{
+      if(doc){
+        //cookie存储
+        res.cookie("adminId",doc.userId,{
+          path:'/',//存储的路劲
+          maxAge:1000*60*60//存储一个小时
+        })
+        res.cookie("adminName",doc.userName,{
+          path:'/',//存储的路劲
+          maxAge:1000*60*60//存储一个小时
+        })
+        res.json({
+          status:'0',
+          msg:"",
+          result:{
+            adminName:doc.userName
+          }
+        })
+      }else{
+        res.json({
+          status:'1',
+          msg:"输入不正确",
+          result:''
+        })
+      }
+    }
+  })
 });
 //admin登出
 router.post("/logout",function(req,res,next){
-	//清楚cookie
-	res.cookie("adminId","",{
-		path:"/",
-		maxAge:-1
-	})
-	res.json({
-		status:'0',
-		msg:"",
-		result:""
-	})
+  //清楚cookie
+  res.cookie("adminId","",{
+    path:"/",
+    maxAge:-1
+  })
+  res.json({
+    status:'0',
+    msg:"",
+    result:""
+  })
 })
 //用户列表数据
  router.get("/userlist",function(req,res,next){
- 	let page = parseInt(req.param("page"));
-  	let pageSize = parseInt(req.param("pageSize"));
-  	let skip = (page-1)*pageSize;
- 	var priceGt ='',priceLte='';
- 	var adminId = req.cookies.adminId;
- 	console.log(adminId)
- 	let UserModel=User.find({}).skip(skip).limit(pageSize);
- 	if(adminId!=undefined){
- 	 UserModel.exec({},function(err,doc){
- 		if (err) {
- 			res.json({
- 				status:"1",
- 				mag:err.message
- 			});
- 		}else{
- 			userlist=[];
- 			doc.forEach((itme)=>{
-    			let lis={
-    				userName:itme.userName,
-    				userEmail:itme.userEmail,
-    				createTime:itme.createTime
-    			}
-    			userlist.push(lis);
-    		})
- 			res.json({
- 				status:"0",
- 				msg:'',
- 				result:{
- 					count:doc.length,
- 					list:userlist
- 				}
- 			})
- 		}
- 	})
- 	}else{
- 		res.json({
+  let page = parseInt(req.param("page"));
+    let pageSize = parseInt(req.param("pageSize"));
+    let skip = (page-1)*pageSize;
+  var priceGt ='',priceLte='';
+  var adminId = req.cookies.adminId;
+  console.log(adminId)
+  let UserModel=User.find({}).skip(skip).limit(pageSize);
+  if(adminId!=undefined){
+   UserModel.exec({},function(err,doc){
+    if (err) {
+      res.json({
+        status:"1",
+        mag:err.message
+      });
+    }else{
+      userlist=[];
+      doc.forEach((itme)=>{
+          let lis={
+            userName:itme.userName,
+            userEmail:itme.userEmail,
+            createTime:itme.createTime
+          }
+          userlist.push(lis);
+        })
+      res.json({
+        status:"0",
+        msg:'',
+        result:{
+          count:doc.length,
+          list:userlist
+        }
+      })
+    }
+  })
+  }else{
+    res.json({
           status:"10001",
           msg:'',
           result:'非法操作'
         })
- 	}
+  }
  });
  router.post('/addshop',function(req,res,next){
   var userId = req.cookies.userId,
@@ -241,11 +240,11 @@ router.post('/uploader', function(req, res) {
       res.render('index', { title: TITLE });
       return;
     }
-    var avatarName = Math.random() + '.' + extName;
+    var pathName = Math.random() + '.' + extName;
     //图片写入地址；
-    var newPath = form.uploadDir + avatarName;
+    var newPath = form.uploadDir + pathName;
     //显示地址；
-    var showUrl = domain + AVATAR_UPLOAD_FOLDER + avatarName;
+    var showUrl = domain + AVATAR_UPLOAD_FOLDER + pathName;
     fs.renameSync(files.fulAvatar.path, newPath);  //重命名
     //获取条数
     imgs.find({}).count(function(err,count){
@@ -253,6 +252,7 @@ router.post('/uploader', function(req, res) {
       imgs.create({
         imgId:uuidv4(),
         imgLink:showUrl,
+        imgPathName:pathName,
         imgSort:count+1
         },function(err,doc){ 
            if (err) {
@@ -302,24 +302,37 @@ router.get('/imglist', function(req, res) {
           result:''
         })
       }else{
-         console.log('创建')
-      imgs.remove({
-         'imgId':imgId
-      },function(err,doc){
-        if(err){
-        res.json({
-          status:"1",
-          msg:err.message,
-          result:''
-        })
-      }else{
-        res.json({
-          status:"0",
-          msg:'',
-          result:'删除成功'
-        })
-      }
-      })
+         imgs.findOne({imgId:imgId},function(err,doc){
+          var PathName='../'+AVATAR_UPLOAD_FOLDER+doc.imgPathName
+              //删除目录文件
+              fs.unlink(PathName,function(err,doc){
+                if(err){
+                  res.json({
+                    status:"2",
+                    msg:'删除路径错误',
+                    result:''
+                  })
+                }else{
+                    imgs.remove({
+                      'imgId':imgId
+                    },function(err,doc){
+                if(err){
+                  res.json({
+                    status:"1",
+                    msg:err.message,
+                    result:''
+                  })
+                }else{
+                  res.json({
+                    status:"0",
+                    msg:'删除成功',
+                    result:''
+                  })
+                }
+                })
+              }
+            });
+         })
     }
     }else{
          res.json({
