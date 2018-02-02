@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var User = require("../models/users.js")
+var Goods =require('../models/shops')
 var mongoose =require("mongoose");
 var uuidv1 = require('uuid/v1');
 var uuidv4 = require('uuid/v4');
@@ -148,26 +149,38 @@ router.get("/getCart",function(req,res,next){
 	}
 })
 //查询当前用户的购物车列表
-router.get("/CartList",function(req,res,next){
+router.post("/CartList",function(req,res,next){
 	//获取用户ID
-	var userId= req.cookies.userId;
-	//根据用户ID查找 这里 必须要findOne 通过ID查一条
-	User.findOne({userId:userId},function(err,doc){
-		if(err){
-			res.json({
-				status:"1",
-				msg:err.message,
-				result:''
-			})
+	var userId= req.cookies.userId,productId = req.body.productId;
 
-		}else{
-			res.json({
-				status:"0",
-				msg:'',
-				result:doc.cartList
-			})
-		}	
+			console.log(productId)
+	if (productId==="undefined"||productId===undefined||productId==null) {
+						User.findOne({userId:userId},function(err,doc){
+			if(err){
+				res.json({
+					status:"1",
+					msg:err.message,
+					result:''
+					})
+				}else{
+				res.json({
+					status:"0",
+					msg:'',
+					result:doc.cartList
+				})
+			}	
 	  })
+	}else{
+
+	Goods.find({"productId":productId},function(err,doc){
+			res.json({
+					status:"0",
+					msg:'',
+					result:doc
+				})
+			})
+	}
+
 })
 // //购物车删除
 router.post("/cartdel",function(req,res,next){
@@ -356,7 +369,7 @@ router.post('/addAddress',function(req,res,next){
     					'streetName':streetName,
     					'postCode':postCode,
     					'tel':tel,
-    					'isDefault':false
+    					'isDefault':true
 					}
 				}
 				
@@ -407,7 +420,7 @@ router.post('/delAddress',function(req,res,next){
 	  })
 })
 router.post('/payMent',function(req,res,next){
-		var userId = req.cookies.userId,ordertotal=req.body.ordertotal,addressId=req.body.addressId;
+		var userId = req.cookies.userId,ordertotal=req.body.ordertotal,addressId=req.body.addressId,productId=req.body.productId;
 		User.findOne({userId:userId},function(err,doc){
 			if(err){
 				res.json({
@@ -416,20 +429,37 @@ router.post('/payMent',function(req,res,next){
 					result:''
 				})
 			}else{
-				var address='',goodsList=[];
+
+				var address='',goodsList=[],goodorder;
 				//获取用户的地址
+					console.log(addressId,address)		
 				doc.addressList.forEach((item)=>{
 					if(addressId==item.addressId){
 						address=item;
 					}
 				})
-				console.log(address)
-				//把购物车商品 插入goodsList
-				doc.cartList.filter((item)=>{
+					console.log(productId)
+			if(productId=="undefined"||productId==undefined){
+					doc.cartList.forEach((item)=>{
 					if (item.checked=='1') {
+							//把购物车商品 插入goodsList
 						goodsList.push(item);
+						console.log(item)
+						//删除购物车以下单的商品
+						User.update({userId:userId},{$pull:{'cartList':{'productId':item.productId}}},function(err,doc){})
 					};
 				});
+				addorder(ordertotal,address,goodsList)
+		
+					console.log('1')
+			}else{
+					Goods.find({"productId":productId},function(err1,doc1){
+						addorder(ordertotal,address,doc1)
+				})
+
+			}
+			//添加订单函数
+			function addorder(ordertotal,address,goodsList){
 				var platform='888'
 				var r1=Math.floor(Math.random()*10);
 				var r2=Math.floor(Math.random()*10);
@@ -458,7 +488,6 @@ router.post('/payMent',function(req,res,next){
 						result:''
 					})
 				}else{
-					//console.log(orderId,ordertotal)
 					res.json({
 						status:"0",
 						msg:'',
@@ -468,7 +497,11 @@ router.post('/payMent',function(req,res,next){
 						}
 					})
 				}
-		  	})				
+		  	})
+
+			}
+				console.log(goodsList);
+				
 		}
 
 	})

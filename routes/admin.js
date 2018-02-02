@@ -2,8 +2,7 @@ var express = require('express');
 var router = express.Router();
 var Admin = require("../models/admins.js")
 var User = require("../models/users.js")
- // var Goods =require('../models/goods')
- var Goods =require('../models/shop')//爬虫得回来的数据
+ var Goods =require('../models/shops')
  var imgs = require("../models/imgs.js");
 var mongoose =require("mongoose");
 var uuidv1 = require('uuid/v1');
@@ -13,7 +12,7 @@ var uuidv4 = require('uuid/v4');
 fs = require('fs'),
 TITLE = '上传测试',
 AVATAR_UPLOAD_FOLDER = '/public/images/',
-domain = "http://120.78.185.163:3000";
+domain = "http://127.0.0.1:3000";
 //admin登录接口
 router.post('/login',function(req,res,next){
   var param={
@@ -112,6 +111,52 @@ router.post("/logout",function(req,res,next){
         })
   }
  });
+ //订单管理接口（未完成）
+  router.get("/userorderlist",function(req,res,next){
+  let page = parseInt(req.param("page"));
+    let pageSize = parseInt(req.param("pageSize"));
+    let skip = (page-1)*pageSize;
+  var priceGt ='',priceLte='';
+  var adminId = req.cookies.adminId;
+  console.log(adminId)
+  // if(shopname!==undefined){
+  //     var params = {
+  //       productName:{ $regex:shopname }
+  //     };
+  let UserModel=User.find({}).skip(skip).limit(pageSize);
+  if(adminId!=undefined){
+   UserModel.exec({},function(err,doc){
+    if (err) {
+      res.json({
+        status:"1",
+        mag:err.message
+      });
+    }else{
+      orderList=[];
+      doc.forEach((itme)=>{
+        if(itme.orderList.length>0){
+          orderList.push(itme.orderList[0]);
+        }
+        })
+      res.json({
+        status:"0",
+        msg:'',
+        result:{
+          count:orderList.length,
+          list:orderList
+        }
+      })
+    }
+  })
+  }else{
+    res.json({
+          status:"10001",
+          msg:'',
+          result:'非法操作'
+        })
+  }
+ });
+//添加商品
  router.post('/addshop',function(req,res,next){
   var userId = req.cookies.userId,
   productName = req.body.productName,
@@ -270,6 +315,7 @@ router.post('/uploader', function(req, res) {
       });
   });
 });
+//图片列表（轮播图）
 router.get('/imglist', function(req, res) {
    imgs.find({}).sort({'imgSort':1}).exec(function(err,doc){
         if (err) {
