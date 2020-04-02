@@ -284,11 +284,11 @@ router.get('/addressList', function (req, res, next) {
 				result: ''
 			})
 		} else {
-			var addressList = doc.addressList.sort({ "salePrice": 1 })//1升序  -1降序
+			// var addressList = doc.addressList.sort({ "salePrice": 1 })//1升序  -1降序
 			res.json({
-				status: '0',
+				status: 0,
 				mas: '',
-				result: addressList
+				result: doc.addressList
 			})
 		}
 	})
@@ -350,7 +350,7 @@ router.post('/addAddress', function (req, res, next) {
 		postCode = req.body.postCode,
 		streetName = req.body.streetName,
 		tel = req.body.tel;
-	// console.log(userName,postCode,streetName,tel)
+	console.log(userName, postCode, streetName, tel)
 	User.findOne({ userId: userId }, function (err, doc) {
 		if (err) {
 			res.json({
@@ -374,18 +374,8 @@ router.post('/addAddress', function (req, res, next) {
 				}
 
 			}, function (err, doc) {
-				if (err) {
-					res.json({
-						status: "1",
-						msg: err.message,
-						result: ''
-					})
-				} else {
-					res.json({
-						status: "0",
-						msg: '',
-						result: 'suc'
-					})
+				if (!err) {
+					res.json({ status: 0 })
 				}
 			})
 		}
