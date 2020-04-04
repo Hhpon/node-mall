@@ -20,7 +20,6 @@ router.post('/login', function (req, res, next) {
     userPwd: req.body.userPwd
   }
   Admin.findOne(param, function (err, doc) {
-    console.log(doc)
     if (err) {
       res.json({
         status: '1',
@@ -67,6 +66,46 @@ router.post("/logout", function (req, res, next) {
     result: ""
   })
 })
+// admin修改密码
+router.post('/edit', (req, res, next) => {
+  var param = {
+    userName: req.cookies.adminName,
+    userPwd: req.body.checkPass
+  }
+  Admin.findOne(param, function (err, doc) {
+    if (err) {
+      res.json({
+        status: '1',
+        msg: err.message
+      })
+    } else {
+      if (doc) {
+        Admin.update({ userName: param.userName }, { $set: { userPwd: req.body.confirmPass } }, (err, doc) => {
+          if (err) {
+            res.json({
+              status: '1',
+              msg: err.message
+            })
+          } else {
+            res.json({
+              status: '0',
+              msg: "",
+              result: {
+                adminName: doc.userName
+              }
+            })
+          }
+        })
+      } else {
+        res.json({
+          status: '1',
+          msg: "输入不正确",
+          result: ''
+        })
+      }
+    }
+  })
+})
 //用户列表数据
 router.get("/userlist", function (req, res, next) {
   let page = parseInt(req.param("page"));
@@ -111,18 +150,13 @@ router.get("/userlist", function (req, res, next) {
     })
   }
 });
-//订单管理接口（未完成）
+//订单管理接口
 router.get("/userorderlist", function (req, res, next) {
   let page = parseInt(req.param("page"));
   let pageSize = parseInt(req.param("pageSize"));
   let skip = (page - 1) * pageSize;
   var priceGt = '', priceLte = '';
   var adminId = req.cookies.adminId;
-  console.log(adminId)
-  // if(shopname!==undefined){
-  //     var params = {
-  //       productName:{ $regex:shopname }
-  //     };
   let UserModel = User.find({}).skip(skip).limit(pageSize);
   if (adminId != undefined) {
     UserModel.exec({}, function (err, doc) {
@@ -133,9 +167,10 @@ router.get("/userorderlist", function (req, res, next) {
         });
       } else {
         orderList = [];
-        doc.forEach((itme) => {
-          if (itme.orderList.length > 0) {
-            orderList.push(itme.orderList[0]);
+        doc.forEach((item) => {
+          if (item.orderList.length > 0) {
+            console.log(item.orderList[0], 'item');
+            orderList = orderList.concat(item.orderList);
           }
         })
         res.json({
@@ -156,6 +191,30 @@ router.get("/userorderlist", function (req, res, next) {
     })
   }
 });
+// 删除订单
+router.get('/delorder', function (req, res, next) {
+  User.findOne({ orderList: { $elemMatch: { orderId: req.query.orderId } } }, function (err, doc) {
+    if (err) {
+      console.log(err);
+      return
+    }
+    doc.orderList.splice(doc.orderList.findIndex((ele) => ele.orderId === req.query.orderId), 1)
+    User.update({ userId: doc.userId }, { $set: { orderList: doc.orderList } }, (err, doc) => {
+      if (err) {
+        res.json({
+          status: "1",
+          mag: err.message
+        });
+        return
+      }
+      res.json({
+        status: "0",
+        msg: '',
+        result: '删除成功'
+      })
+    })
+  })
+})
 //添加商品
 router.post('/addshop', function (req, res, next) {
   var userId = req.cookies.userId,

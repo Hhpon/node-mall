@@ -409,6 +409,7 @@ router.post('/delAddress', function (req, res, next) {
 		}
 	})
 })
+// 付款
 router.post('/payMent', function (req, res, next) {
 	var userId = req.cookies.userId, ordertotal = req.body.ordertotal, addressId = req.body.addressId, productId = req.body.productId;
 	User.findOne({ userId: userId }, function (err, doc) {
@@ -488,10 +489,7 @@ router.post('/payMent', function (req, res, next) {
 						})
 					}
 				})
-
 			}
-			console.log(goodsList);
-
 		}
 
 	})
