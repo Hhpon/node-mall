@@ -17,14 +17,12 @@ router.post('/Signup', function (req, res, next) {
 				msg: err.message,
 				result: ''
 			})
-
 		} else if (doc) {
 			res.json({
 				status: '2',
 				msg: "用户名已存在",
 				result: ""
 			})
-
 		} else {
 			var date = new Date().getTime()
 			var datas = new Date(date).toLocaleString().replace(/\//g, "-");
@@ -50,6 +48,24 @@ router.post('/Signup', function (req, res, next) {
 				}
 			});
 		}
+	})
+})
+router.get('/delete', function (req, res) {
+	const userName = req.query.userName
+	User.remove({ userName: userName }, function (err, doc) {
+		if (err) {
+			res.json({
+				status: '1',
+				msg: err.message,
+				result: ''
+			})
+			return
+		}
+		res.json({
+			status: '0',
+			msg: "删除成功",
+			result: ""
+		})
 	})
 })
 //登陆接口
@@ -134,15 +150,23 @@ router.get("/getCart", function (req, res, next) {
 					result: ''
 				})
 			} else {
-				var cartList = doc.cartList;
-				let carCount = 0;
-				cartList.map(function (item) {
-					carCount += parseInt(item.productNum)
-				})
+				if (doc && doc.hasOwnProperty('cartList')) {
+					var cartList = doc.cartList;
+					let carCount = 0;
+					cartList.map(function (item) {
+						carCount += parseInt(item.productNum)
+					})
+					res.json({
+						status: "0",
+						msg: '',
+						result: carCount
+					})
+					return
+				}
 				res.json({
-					status: "0",
+					status: "1",
 					msg: '',
-					result: carCount
+					result: '无数据'
 				})
 			}
 		})
